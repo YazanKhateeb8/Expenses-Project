@@ -15,35 +15,26 @@ const Expense = require("../model/Expense");
 
 
 router.get("/expenses", function (req, res) {
-  const d1 = req.query.d1;
-  const d2 = req.query.d2;
+  let d1 = req.query.d1 
+  let d2 = req.query.d2? req.query.d2:new Date();
+  let startDate = moment(d1).format("YYYY-MM-DD")
+  let endDate = moment(d2).format("YYYY-MM-DD")
 
-  let startDate = moment(d1, "YYYY-MM-DD").toDate();
-  let endDate = moment(d2, "YYYY-MM-DD").toDate();
-    console.log(endDate);
-  if (d1 && d2) {
+ 
+
+  if(d1){
+    
     Expense.find({
-      date: {
-        $gte: startDate,
-        $lte: endDate,
-      }
-    })
-      .sort({ date: "asc" })
-      .then((expenses) => {
-        res.status(200).send(expenses);
-      });
-  }
-  else if(d1) {
-    Expense.find({
-      date: {
-        $gte: startDate
-      }
-    })
-      .sort({ date: "asc" })
-      .then((expenses) => {
-        res.status(200).send(expenses);
-      });
-  }
+          date: {
+            $gte: startDate,
+            $lte: endDate,
+          }
+        })
+          .sort({ date: "asc" })
+          .then((expenses) => {
+            res.status(200).send(expenses);
+          });
+  } 
    else {
     Expense.find({})
       .sort({ date: "asc" })
@@ -69,7 +60,7 @@ router.post("/expense", function (req, res) {
       res.status(201).send(`you spent ${expense.amount} on this item : ${expense.item}`);
     })
     .catch((err) => {
-      res.status(500).send(err);
+      res.status(409).send(err);
     });
 });
 
@@ -85,7 +76,7 @@ router.put("/update", function (req, res) {
       res.status(200).send(`Expense ${expense.item} updated to group ${expense.group}.`);
     })
     .catch((err) => {
-      res.status(500).send(err);
+      res.status(400).send(err);
     });
 });
 
@@ -94,13 +85,27 @@ router.put("/update", function (req, res) {
 
 router.get("/expenses/:group", function (req, res) {
   let group = req.params.group;
-  Expense.find({ group })
+  let total = req.query.total;
+
+  if (total == "true") {
+    Expense.aggregate([
+      { $match: { group: group } },
+      { $group: { _id: "$group", total: { $sum: "$amount" } } },
+    ])
+      .exec()
+      .then((expense) => res.send(expense));
+  }
+  else{
+
+    Expense.find({ group })
     .then((expenses) => {
       res.status(200).send(expenses);
     })
     .catch((err) => {
-      res.status(500).send(err);
+      res.status(400).send(err);
     });
+  }
+  
 });
 
 
