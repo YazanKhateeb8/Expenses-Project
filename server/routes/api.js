@@ -80,7 +80,7 @@ router.put("/update", function (req, res) {
   let group1 = req.body.group1;
   let group2 = req.body.group2;
 
-  Expense.findOneAndUpdate({ group: group1 }, { $set: { group: group2 } })
+  Expense.findOneAndUpdate({ group: group1 }, { $set: { group: group2 } } , { new: true })
     .then((expense) => {
       res.status(200).send(`Expense ${expense.item} updated to group ${expense.group}.`);
     })
